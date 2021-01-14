@@ -12,14 +12,16 @@ import PropTypes from 'prop-types';
 import {Glyphicon} from 'react-bootstrap';
 import { connect } from "react-redux";
 
+import { toggleHighlightFeature } from '@mapstore/actions/mapInfo';
 import { toggleControl } from "@mapstore/actions/controls";
 import Message from "@mapstore/components/I18N/Message";
 import ToolsContainer from '@mapstore/plugins/containers/ToolsContainer';
 
 import Nru from './urbanisme/Nru';
+import GFIPanel from './urbanisme/LandPlanning';
 import urbanismeEpic from '../epics/urbanisme';
 import urbanismeReducer from '../reducers/urbanisme';
-import { setUp } from '../actions/urbanisme';
+import {setUp, toggleGFIPanel, printSpec} from '../actions/urbanisme';
 import { CONTROL_NAME } from '../constants';
 
 import '../../assets/style.css';
@@ -87,23 +89,34 @@ class UrbanismeToolbar extends React.Component {
             className: "square-button"
         };
 
-        return this.props.enabled ? (<ToolsContainer
-            id={CONTROL_NAME}
-            className="urbanismeToolbar btn-group-horizontal"
-            container={Container}
-            toolStyle="primary"
-            activeStyle="success"
-            panelStyle={panelStyle}
-            toolCfg={btnConfig}
-            tools={this.getTools()}
-            panels={[]} />) : null;
+        return this.props.enabled ? (
+            <> <ToolsContainer
+                id={CONTROL_NAME}
+                className="urbanismeToolbar btn-group-horizontal"
+                container={Container}
+                toolStyle="primary"
+                activeStyle="success"
+                panelStyle={panelStyle}
+                toolCfg={btnConfig}
+                tools={this.getTools()}
+                panels={[]} />
+            {this.props.showGFIPanel && <GFIPanel {...this.props}/>}
+            </>
+        ) : null;
     }
 }
 
 const Urbanisme = connect((state) => ({
-    enabled: state.controls && state.controls.urbanisme && state.controls.urbanisme.enabled || false
+    enabled: state.controls && state.controls.urbanisme && state.controls.urbanisme.enabled || false,
+    showGFIPanel: state?.urbanisme?.showGFIPanel || false,
+    nruData: state?.urbanisme?.nruData,
+    loading: state?.urbanisme?.loadFlags?.nruLoading || false,
+    printing: state?.urbanisme?.loadFlags?.printing || false
 }), {
-    onSetUp: setUp
+    onSetUp: setUp,
+    togglePanel: toggleGFIPanel,
+    toggleHighlightFeature,
+    onPrint: printSpec
 })(UrbanismeToolbar);
 
 const UrbanismePluginDefinition = {

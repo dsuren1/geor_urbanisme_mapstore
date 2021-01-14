@@ -8,16 +8,12 @@
 
 import axios from '@mapstore/libs/ajax';
 
-let baseURL = '/cadastrapp';
-
-export function setBaseURL(url) {
-    baseURL = url;
-}
+export const BASE_URL = '/cadastrapp/services';
 
 /**
  * Retrieves the initial configuration for cadastrapp services
  * @returns {object} the configuration of the services containing base details of WMS/WFS services
  */
 export function getConfiguration() {
-    return axios.get(`${baseURL}/services/getConfiguration`).then(({data}) => data);
+    return axios.get(`${BASE_URL}/getConfiguration`).then(({data}) => data);
 }

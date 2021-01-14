@@ -6,4 +6,26 @@
     margin-bottom: 35px;
     margin-right: 5px;
   }
-    
+
+.table-parcelle.table {
+    width: 400px;
+    border: 1px solid #dddddd;
+}
+
+.parcelle-table-label, .parcelle-table-value {
+    width: 200px;
+}
+
+.parcelle-table-label {
+    background-color: #696969;
+    color: lightgrey;
+    font-weight: bold;
+}
+.parcelle h2, .parcelle h3 {
+    margin-top: 0;
+    font-weight: bold;
+}
+
+.parcelle .table-parcelle td {
+    padding: 4px;
+}
