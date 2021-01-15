@@ -16,8 +16,24 @@ import { CLICK_ON_MAP } from '@mapstore/actions/map';
 import { wrapStartStop } from '@mapstore/observables/epics';
 
 import { createControlEnabledSelector, measureSelector } from '@mapstore/selectors/controls';
-import {SET_UP, setConfiguration, loading, setNRUProperty,
-    toggleNru, getCommune, getFIC, getParcelle, getRenseignUrba, getRenseignUrbaInfos, toggleGFIPanel} from '../actions/urbanisme';
+import {
+    SET_UP,
+    setConfiguration,
+    loading,
+    setNRUProperty,
+    setADSProperty,
+    toggleNru,
+    getCommune,
+    getFIC,
+    getParcelle,
+    getRenseignUrba,
+    getRenseignUrbaInfos,
+    toggleGFIPanel,
+    toggleADS,
+    getQuartier,
+    getAdsSecteurInstruction,
+    getAdsAutorisation
+} from '../actions/urbanisme';
 import { configSelector, urbanismeLayerSelector } from '../selectors/urbanisme';
 import { getConfiguration } from '../api';
 import { URBANISME_RASTER_LAYER_ID, URBANISME_LAYER_NAME } from '../constants';
@@ -92,6 +108,7 @@ export const mouseMoveMapEventEpic = (action$, {getState}) =>
             const state = getState();
             const printing = get(getState(), 'urbanisme.loadFlags.printing', false);
             const nruEnabled = get(state, 'urbanisme.nruActive', false);
+            const adsEnabled = get(state, 'urbanisme.adsActive', false);
             const urbanismeEnabled = get(state, 'controls.urbanisme.enabled', false);
             const mapInfoEnabled = get(state, 'mapInfo.enabled', false);
             const isAnnotationsEnabled = createControlEnabledSelector('annotations')(state);
@@ -100,10 +117,10 @@ export const mouseMoveMapEventEpic = (action$, {getState}) =>
             if (isAnnotationsEnabled || isMeasureEnabled || mapInfoEnabled) {
                 return urbanismeEnabled ? Rx.Observable.of(toggleControl('urbanisme')) : Rx.Observable.empty();
             }
-            return nruEnabled && !printing
+            return (nruEnabled || adsEnabled) && !printing
                 ? Rx.Observable.concat(
                     Rx.Observable.of(toggleHighlightFeature(true)),
-                    Rx.Observable.of(featureInfoClick(point, layer), loading(true, 'nruLoading'))
+                    Rx.Observable.of(featureInfoClick(point, layer), loading(true, 'dataLoading'))
                 )
                 : Rx.Observable.empty();
         });
@@ -114,11 +131,14 @@ export const cleanUpUrbanisme = (action$, {getState}) =>
         .switchMap(()=>{
             const state = getState();
             const nruEnabled = get(state, 'urbanisme.nruActive');
+            const adsEnabled = get(state, 'urbanisme.adsActive');
             const gfiPanelEnabled = get(state, 'urbanisme.showGFIPanel');
             return Rx.Observable.from([
                 ...(nruEnabled ? [toggleNru()] : []),
+                ...(adsEnabled ? [toggleADS()] : []),
                 ...(gfiPanelEnabled ? [toggleGFIPanel(false)] : []),
-                setNRUProperty(null)
+                setNRUProperty(null),
+                setADSProperty(null)
             ]);
         });
 export const onClosePanelEpic = (action$) =>
@@ -129,33 +149,47 @@ export const onClosePanelEpic = (action$) =>
 export const getFeatureInfoClick = (action$, {getState}) =>
     action$.ofType(LOAD_FEATURE_INFO)
         .filter(({layer})=> {
-            const printing = get(getState(), 'urbanisme.loadFlags.printing', false);
+            const printing = get(getState(), 'urbanisme.loadFlags.printing', false); // Check this
             const nruActive = get(getState(), 'urbanisme.nruActive', false);
-            return layer.id === URBANISME_RASTER_LAYER_ID && !printing && nruActive;
+            const adsActive = get(getState(), 'urbanisme.adsActive', false);
+            return layer.id === URBANISME_RASTER_LAYER_ID && !printing && (nruActive || adsActive);
         })
         .switchMap(({layerMetadata})=> {
             const parcelleId = layerMetadata.features?.[0]?.properties?.id_parc || '';
+            const nruActive = get(getState(), 'urbanisme.nruActive', false);
+            const adsActive = get(getState(), 'urbanisme.adsActive', false);
             if (isEmpty(parcelleId)) {
-                return Rx.Observable.of(hideMapinfoMarker(), loading(false, 'nruLoading'), setNRUProperty( null));
+                return Rx.Observable.of(hideMapinfoMarker(), loading(false, 'dataLoading'), setNRUProperty( null), setADSProperty( null));
             }
-            const cgoCommune = parcelleId.slice(0, 6);
-            const codeCommune = cgoCommune.substr(0, 2) + cgoCommune.substr(3, 6);
-            return Rx.Observable.forkJoin(
-                getCommune(cgoCommune),
-                getParcelle(parcelleId),
-                getRenseignUrba(parcelleId),
-                getFIC(parcelleId, 0),
-                getFIC(parcelleId, 1),
-                getRenseignUrbaInfos(codeCommune))
-                .switchMap(([commune, parcelle, lisbelle, propPrio, proprioSurf, dates])=>
-                    Rx.Observable.of(setNRUProperty({...commune, ...parcelle, ...lisbelle, ...propPrio, ...proprioSurf, ...dates})))
+            let observable$ = Rx.Observable.empty();
+            if (nruActive) {
+                const cgoCommune = parcelleId.slice(0, 6);
+                const codeCommune = cgoCommune.substr(0, 2) + cgoCommune.substr(3, 6);
+                observable$ = Rx.Observable.forkJoin(
+                    getCommune(cgoCommune),
+                    getParcelle(parcelleId),
+                    getRenseignUrba(parcelleId),
+                    getFIC(parcelleId, 0),
+                    getFIC(parcelleId, 1),
+                    getRenseignUrbaInfos(codeCommune))
+                    .switchMap(([commune, parcelle, lisbelle, propPrio, proprioSurf, dates])=>
+                        Rx.Observable.of(setNRUProperty({...commune, ...parcelle, ...lisbelle, ...propPrio, ...proprioSurf, ...dates})));
+            } else if (adsActive) {
+                observable$ = Rx.Observable.forkJoin(
+                    getAdsSecteurInstruction(parcelleId),
+                    getAdsAutorisation(parcelleId),
+                    getQuartier(parcelleId))
+                    .switchMap(([adsSecteurInstruction, adsAutorisation, quartier])=>
+                        Rx.Observable.of(setADSProperty({...adsSecteurInstruction, ...adsAutorisation, ...quartier})));
+            }
+            return observable$
                 .startWith(toggleGFIPanel(true))
                 .let(wrapStartStop(
-                    loading(true, 'nruLoading'),
-                    loading(false, 'nruLoading'),
+                    loading(true, 'dataLoading'),
+                    loading(false, 'dataLoading'),
                     e => {
                         console.log(e); // eslint-disable-line no-console
-                        return Rx.Observable.of(error({ title: "Error", message: "Unable to fetch NRU data" }), loading(false, 'nruLoading'));
+                        return Rx.Observable.of(error({ title: "Error", message: "Unable to fetch data" }), loading(false, 'dataLoading'));
                     }
                 ));
         });

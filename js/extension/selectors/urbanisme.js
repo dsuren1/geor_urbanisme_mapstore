@@ -11,7 +11,11 @@ import { URBANISME_RASTER_LAYER_ID } from '../constants';
 
 export const configSelector = (state) => state?.urbanisme?.config;
 
+export const activeSelector = (state) => state?.urbanisme?.activeTool;
+
 export const nruActiveStateSelector = state => state?.urbanisme.nruActive || false;
+
+export const adsActiveStateSelector = state => state?.urbanisme.adsActive || false;
 
 export const configLoadingState = state => state?.urbanisme?.loadFlags?.config || false;
 

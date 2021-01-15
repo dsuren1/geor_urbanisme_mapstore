@@ -7,7 +7,16 @@
 */
 import { set } from '@mapstore/utils/ImmutableUtils';
 
-import {SET_CONFIG, TOGGLE_NRU, LOADING, TOGGLE_NRU_GFI_PANEL, SET_NRU_DATA} from '../actions/urbanisme';
+import {
+    SET_CONFIG,
+    TOGGLE_NRU,
+    LOADING,
+    TOGGLE_NRU_GFI_PANEL,
+    SET_NRU_DATA,
+    TOGGLE_ADS,
+    SET_ADS_DATA,
+    TOGGLE_TOOL
+} from '../actions/urbanisme';
 
 const initialState = {
     nruActive: false
@@ -19,6 +28,10 @@ export default function urbanisme(state = initialState, action) {
         return set('config', action.config, state);
     case TOGGLE_NRU:
         return set('nruActive', !state.nruActive, state);
+    case TOGGLE_TOOL:
+        return set('activeTool', !state.nruActive, state);
+    case TOGGLE_ADS:
+        return set('adsActive', !state.adsActive, state);
     case LOADING: {
         return set(action.name === "loading" ? "loading" : `loadFlags.${action.name}`, action.value, set(
             "loading", action.value, state
@@ -29,6 +42,9 @@ export default function urbanisme(state = initialState, action) {
     }
     case SET_NRU_DATA: {
         return {...state, nruData: action.property};
+    }
+    case SET_ADS_DATA: {
+        return {...state, adsData: action.property};
     }
     default:
         return state;

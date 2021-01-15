@@ -17,8 +17,9 @@ import { toggleControl } from "@mapstore/actions/controls";
 import Message from "@mapstore/components/I18N/Message";
 import ToolsContainer from '@mapstore/plugins/containers/ToolsContainer';
 
-import Nru from './urbanisme/Nru';
-import GFIPanel from './urbanisme/LandPlanning';
+import NRU from './urbanisme/NRU';
+import ADS from './urbanisme/ADS';
+import LandPlanPanel from '../components/LandPlanPanel';
 import urbanismeEpic from '../epics/urbanisme';
 import urbanismeReducer from '../reducers/urbanisme';
 import {setUp, toggleGFIPanel, printSpec} from '../actions/urbanisme';
@@ -56,12 +57,25 @@ class UrbanismeToolbar extends React.Component {
                 position: 1,
                 priority: 1,
                 tool: true,
-                plugin: Nru,
-                icon: <Glyphicon glyph="zoom-to" />
+                plugin: NRU
+            },
+            {
+                name: "urbanisme_ads",
+                position: 2,
+                priority: 1,
+                tool: true,
+                plugin: ADS
+            },
+            {
+                name: "urbanisme_help",
+                position: 3,
+                priority: 1,
+                tool: true,
+                plugin: ADS
             },
             {
                 name: "urbanisme_remove",
-                position: 3,
+                position: 4,
                 priority: 1,
                 tool: false,
                 active: true,
@@ -100,7 +114,7 @@ class UrbanismeToolbar extends React.Component {
                 toolCfg={btnConfig}
                 tools={this.getTools()}
                 panels={[]} />
-            {this.props.showGFIPanel && <GFIPanel {...this.props}/>}
+            {this.props.showGFIPanel && <LandPlanPanel {...this.props}/>}
             </>
         ) : null;
     }
@@ -110,7 +124,10 @@ const Urbanisme = connect((state) => ({
     enabled: state.controls && state.controls.urbanisme && state.controls.urbanisme.enabled || false,
     showGFIPanel: state?.urbanisme?.showGFIPanel || false,
     nruData: state?.urbanisme?.nruData,
-    loading: state?.urbanisme?.loadFlags?.nruLoading || false,
+    adsData: state?.urbanisme?.adsData,
+    nruActive: state?.urbanisme?.nruActive,
+    adsActive: state?.urbanisme?.adsActive,
+    loading: state?.urbanisme?.loadFlags?.dataLoading || false, // Remove loadFlags
     printing: state?.urbanisme?.loadFlags?.printing || false
 }), {
     onSetUp: setUp,

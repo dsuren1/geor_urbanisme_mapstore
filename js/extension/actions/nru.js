@@ -123,26 +123,6 @@ const retryDownload = (response, fileName, retries = 10) => {
     });
 };
 
-const getNRUAttributesToPrint = ({urbanisme}) => {
-    const { nruData } = urbanisme || {};
-    return {
-        parcelle: nruData.parcelle || '',
-        commune: nruData.commune || '',
-        codeSection: nruData.codeSection || '',
-        numero: nruData.numero || '',
-        adresseCadastrale: nruData.adresseCadastrale || '',
-        contenanceDGFiP: nruData.contenanceDGFiP || '',
-        surfaceSIG: nruData.surfaceSIG || '',
-        codeProprio: nruData.codeProprio || '',
-        nomProprio: nruData.nomProprio || '',
-        adresseProprio: nruData.adresseProprio || '',
-        dateRU: nruData.dateRU || '',
-        datePCI: nruData.datePCI || '',
-        libelles: (nruData.libelles || []).join("\n\n") || [],
-        outputFilename: "NRU_" + nruData.parcelle
-    };
-};
-
 const getUrbanismePrintSpec = (state) => {
     const {print = {}, map = {}, layers} = state || {};
     const spec = print?.spec && {...print.spec, ...print.map || {}};
@@ -171,13 +151,13 @@ const getUrbanismePrintSpec = (state) => {
     return {layers: layerSpec, scaleForZoom, projectedCenter, dpi, projection};
 };
 
-export const printSpec = () => {
+export const printSpec = (attributes) => {
     return (dispatch, getState) => {
         const state = getState() || {};
-        const {outputFilename, ...dataAttributes} = getNRUAttributesToPrint(state);
+        const {outputFilename, layout = 'A4 portrait', ...dataAttributes} = attributes || {};
         const {layers, scaleForZoom, projectedCenter, dpi, projection} = getUrbanismePrintSpec(state);
         const params = {
-            layout: "A4 portrait",
+            layout,
             outputFilename,
             attributes: {
                 map: {
@@ -193,14 +173,13 @@ export const printSpec = () => {
         dispatch(loading(true, 'printing'));
         return axios.post('/urbanisme/print/report.pdf', params).then((response) =>{
             if (typeof response.data === 'object') {
-                return retryDownload(response, outputFilename).then(()=>{
-                    dispatch(loading(false, 'printing'));
-                });
+                return retryDownload(response, outputFilename).then(()=> dispatch(loading(false, 'printing')))
+                    .catch(e=> dispatch(printError('Error on reading print result: ' + e.data), loading(false, 'dataLoading')));
             }
             dispatch(loading(false, 'printing'));
             return null;
         }).catch(e => {
-            dispatch(printError('Error on reading print result: ' + e.data), loading(false, 'nruLoading'));
+            dispatch(printError('Error on printing: ' + e.data));
         });
     };
 };
