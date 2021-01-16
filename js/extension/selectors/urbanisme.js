@@ -1,5 +1,5 @@
 /*
- * Copyright 2020, GeoSolutions Sas.
+ * Copyright 2021, GeoSolutions Sas.
  * All rights reserved.
  *
  * This source code is licensed under the BSD-style license found in the
@@ -13,10 +13,6 @@ export const configSelector = (state) => state?.urbanisme?.config;
 
 export const activeSelector = (state) => state?.urbanisme?.activeTool;
 
-export const nruActiveStateSelector = state => state?.urbanisme.nruActive || false;
-
-export const adsActiveStateSelector = state => state?.urbanisme.adsActive || false;
-
-export const configLoadingState = state => state?.urbanisme?.loadFlags?.config || false;
+export const attributesSelector = (state) => state?.urbanisme?.attributes || {};
 
 export const urbanismeLayerSelector = (state) => getLayerFromId(state, URBANISME_RASTER_LAYER_ID);

@@ -29,3 +29,10 @@
 .parcelle .table-parcelle td {
     padding: 4px;
 }
+
+#modal-land-panel-dialog {
+    position: fixed;
+    top: 0%;
+    left: 20%;
+    z-index: 1000 !important;
+}
