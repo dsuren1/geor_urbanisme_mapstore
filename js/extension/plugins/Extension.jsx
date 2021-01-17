@@ -10,7 +10,6 @@ import React from "react";
 import {Glyphicon} from 'react-bootstrap';
 import { connect } from "react-redux";
 
-import { toggleHighlightFeature } from '@mapstore/actions/mapInfo';
 import { toggleControl } from "@mapstore/actions/controls";
 import Message from "@mapstore/components/I18N/Message";
 
@@ -29,7 +28,6 @@ const Urbanisme = connect((state) => ({
     togglePanel: toggleGFIPanel,
     onToggleTool: toggleUrbanismeTool,
     onToggleControl: toggleControl,
-    toggleHighlightFeature,
     onPrint: printSubmit
 })(UrbanismeToolbar);
 

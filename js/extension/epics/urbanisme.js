@@ -9,18 +9,19 @@
 import * as Rx from 'rxjs';
 import {get, isEmpty} from "lodash";
 
-import { TOGGLE_CONTROL, toggleControl } from '@mapstore/actions/controls';
+import { TOGGLE_CONTROL, toggleControl, SET_CONTROL_PROPERTY } from '@mapstore/actions/controls';
+import { ANNOTATIONS } from '@mapstore/utils/AnnotationsUtils';
 import { error } from '@mapstore/actions/notifications';
 import { CLICK_ON_MAP } from '@mapstore/actions/map';
 import { addLayer, removeLayer } from '@mapstore/actions/layers';
-import { toggleMapInfoState, toggleHighlightFeature, purgeMapInfoResults, featureInfoClick, LOAD_FEATURE_INFO, hideMapinfoMarker, TOGGLE_HIGHLIGHT_FEATURE } from '@mapstore/actions/mapInfo';
+import { toggleMapInfoState, toggleHighlightFeature, purgeMapInfoResults, featureInfoClick, LOAD_FEATURE_INFO, hideMapinfoMarker } from '@mapstore/actions/mapInfo';
 import { createControlEnabledSelector, measureSelector } from '@mapstore/selectors/controls';
 import { wrapStartStop } from '@mapstore/observables/epics';
 
-import { SET_UP, setConfiguration, loading, setAttributes, toggleUrbanismeTool, toggleGFIPanel } from '../actions/urbanisme';
-import { configSelector, urbanismeLayerSelector } from '../selectors/urbanisme';
+import { SET_UP, setConfiguration, loading, setAttributes, toggleUrbanismeTool, toggleGFIPanel, TOGGLE_VIEWER_PANEL } from '../actions/urbanisme';
+import { configSelector, urbanismeLayerSelector, urbanimseControlSelector, activeToolSelector, printingSelector, lpGFIPanelSelector } from '../selectors/urbanisme';
 import { getConfiguration, getCommune, getFIC, getParcelle, getRenseignUrba, getRenseignUrbaInfos, getQuartier, getAdsSecteurInstruction, getAdsAutorisation } from '../api';
-import {URBANISME_RASTER_LAYER_ID, URBANISME_LAYER_NAME, URBANISME_TOOLS} from '../constants';
+import { CONTROL_NAME, URBANISME_RASTER_LAYER_ID, URBANISME_LAYER_NAME, URBANISME_TOOLS } from '../constants';
 
 /**
  * Ensures that config for the urbanisme tool is fetched and loaded
@@ -33,7 +34,6 @@ export const setUpPluginEpic = (action$, store) =>
         .switchMap(() => {
             const state = store.getState();
             const isConfigLoaded = !!configSelector(state);
-
             return isConfigLoaded
                 ? Rx.Observable.empty()
                 : Rx.Observable.defer(() => getConfiguration()).switchMap(data => Rx.Observable.of(setConfiguration(data)));
@@ -48,12 +48,13 @@ export const setUpPluginEpic = (action$, store) =>
  */
 export const toggleLandPlanningEpic =  (action$, store) =>
     action$.ofType(TOGGLE_CONTROL)
-        .filter(({ control }) => control === "urbanisme")
+        .filter(({ control }) => control === CONTROL_NAME)
         .switchMap(() => {
             const state = store.getState();
             const { cadastreWMSURL } = configSelector(state);
-            const enabled = get(state, 'controls.urbanisme.enabled', false);
+            const enabled = urbanimseControlSelector(state);
             const mapInfoEnabled = get(state, 'mapInfo.enabled');
+            const isMeasureEnabled = measureSelector(state);
             if (enabled) {
                 return Rx.Observable.from([addLayer({
                     id: URBANISME_RASTER_LAYER_ID,
@@ -64,7 +65,10 @@ export const toggleLandPlanningEpic =  (action$, store) =>
                     search: {}
                 }),
                 toggleHighlightFeature(true)])
-                    .concat(mapInfoEnabled ? [toggleMapInfoState()] : []);
+                    .concat([
+                        ...(mapInfoEnabled ? [toggleMapInfoState()] : []),
+                        ...(isMeasureEnabled ? [toggleControl('measure')] : [])
+                    ]);
             }
             const layer = urbanismeLayerSelector(state);
             return !isEmpty(layer)
@@ -83,17 +87,14 @@ export const clickOnMapEventEpic = (action$, {getState}) =>
         .filter(()=> !isEmpty(urbanismeLayerSelector(getState())))
         .switchMap(({point, layer}) => {
             const state = getState();
-            const printing = get(getState(), 'urbanisme.printing', false);
-            const activeTool = get(state, 'urbanisme.activeTool');
-            const urbanismeEnabled = get(state, 'controls.urbanisme.enabled', false);
+            const isPrinting = printingSelector(state);
+            const activeTool = activeToolSelector(state);
+            const urbanismeEnabled = urbanimseControlSelector(state);
             const mapInfoEnabled = get(state, 'mapInfo.enabled', false);
-            const isAnnotationsEnabled = createControlEnabledSelector('annotations')(state);
-            const isMeasureEnabled = measureSelector(state);
-
-            if (isAnnotationsEnabled || isMeasureEnabled || mapInfoEnabled) {
-                return urbanismeEnabled ? Rx.Observable.of(toggleControl('urbanisme')) : Rx.Observable.empty();
+            if (mapInfoEnabled) {
+                return urbanismeEnabled ? Rx.Observable.of(toggleControl(CONTROL_NAME)) : Rx.Observable.empty();
             }
-            return (!isEmpty(activeTool)) && !printing
+            return !isEmpty(activeTool) && !isPrinting
                 ? Rx.Observable.concat(
                     Rx.Observable.of(toggleHighlightFeature(true)),
                     Rx.Observable.of(featureInfoClick(point, layer), loading(true, 'dataLoading'))
@@ -107,31 +108,55 @@ export const clickOnMapEventEpic = (action$, {getState}) =>
  * @param {observable} action$ manages `TOGGLE_CONTROL`
  * @return {observable}
  */
-export const cleanUpUrbanisme = (action$, {getState}) =>
+export const cleanUpUrbanismeEpic = (action$, {getState}) =>
     action$.ofType(TOGGLE_CONTROL)
-        .filter(({ control }) => control === "urbanisme" && !get(getState(), 'controls.urbanisme.enabled'))
-        .switchMap(()=>{
+        .filter(({control}) => {
+            const isUrbanismeEnabled = urbanimseControlSelector(getState());
+            const isAnnotationsEnabled = createControlEnabledSelector(ANNOTATIONS)(getState());
+            return (control === CONTROL_NAME && !isUrbanismeEnabled) || (control === ANNOTATIONS && isAnnotationsEnabled && isUrbanismeEnabled);
+        })
+        .switchMap(({control})=>{
             const state = getState();
-            const activeTool = get(state, 'urbanisme.activeTool');
-            const gfiPanelEnabled = get(state, 'urbanisme.showGFIPanel');
-            return Rx.Observable.from([
-                ...(!isEmpty(activeTool) ? [toggleUrbanismeTool(null)] : []),
-                ...(gfiPanelEnabled ? [toggleGFIPanel(false)] : []),
-                setAttributes(null),
-                toggleHighlightFeature(false)
-            ]);
+            const activeTool = activeToolSelector(state);
+            const gfiPanelEnabled = lpGFIPanelSelector(state);
+            let observable$ = Rx.Observable.empty();
+            if (control === CONTROL_NAME) {
+                observable$ = Rx.Observable.from([
+                    ...(!isEmpty(activeTool) ? [toggleUrbanismeTool(null)] : []),
+                    ...(gfiPanelEnabled ? [toggleGFIPanel(false)] : []),
+                    setAttributes(null),
+                    toggleHighlightFeature(false)
+                ]);
+            } else if (control === ANNOTATIONS) {
+                observable$ = Rx.Observable.of(toggleControl(CONTROL_NAME));
+            }
+            return observable$;
         });
 
 /**
- * Ensures that when the highlight of feature is disabled when map info marker is hidden
+ * Ensures that when the urbanisme plugin is closed when measurement tool is activated
  * @memberof epics.urbanisme
- * @param {observable} action$ manages `TOGGLE_HIGHLIGHT_FEATURE`
+ * @param {observable} action$ manages `SET_CONTROL_PROPERTY`
+ * @return {observable}
+ */
+export const closeOnMeasureEnabledEpic = (action$, {getState}) =>
+    action$.ofType(SET_CONTROL_PROPERTY)
+        .filter(({control})=> control === 'measure' && measureSelector(getState()))
+        .switchMap(()=> {
+            const urbanismeEnabled = urbanimseControlSelector(getState());
+            return urbanismeEnabled ? Rx.Observable.of(toggleControl(CONTROL_NAME)) : Rx.Observable.empty();
+        });
+
+/**
+ * Ensures that upon closing viewer panel, highlight of feature is disabled and map marker is hidden
+ * @memberof epics.urbanisme
+ * @param {observable} action$ manages `TOGGLE_VIEWER_PANEL`
  * @return {observable}
  */
 export const onClosePanelEpic = (action$) =>
-    action$.ofType(TOGGLE_HIGHLIGHT_FEATURE)
+    action$.ofType(TOGGLE_VIEWER_PANEL)
         .filter(({enabled}) => !enabled)
-        .switchMap(()=> Rx.Observable.of(hideMapinfoMarker()));
+        .switchMap(()=> Rx.Observable.of(hideMapinfoMarker(), toggleHighlightFeature(false)));
 
 /**
  * Ensures that when the feature info is loaded it has parcelle data to proceed further to call NRU/ADS data
@@ -139,20 +164,18 @@ export const onClosePanelEpic = (action$) =>
  * @param {observable} action$ manages `LOAD_FEATURE_INFO`
  * @return {observable}
  */
-export const getFeatureInfoClick = (action$, {getState}) =>
+export const getFeatureInfoEpic = (action$, {getState}) =>
     action$.ofType(LOAD_FEATURE_INFO)
-        .filter(({layer})=> {
-            const printing = get(getState(), 'urbanisme.printing', false); // Check this
-            const activeTool = get(getState(), 'urbanisme.activeTool');
-            return layer.id === URBANISME_RASTER_LAYER_ID && !printing && !isEmpty(activeTool);
-        })
+        .filter(({layer})=> layer.id === URBANISME_RASTER_LAYER_ID && !printingSelector(getState()) && !isEmpty(activeToolSelector(getState())))
         .switchMap(({layerMetadata})=> {
             const parcelleId = layerMetadata.features?.[0]?.properties?.id_parc || '';
-            const activeTool = get(getState(), 'urbanisme.activeTool');
+            const activeTool = activeToolSelector(getState());
             if (isEmpty(parcelleId)) {
                 return Rx.Observable.of(hideMapinfoMarker(), loading(false, 'dataLoading'), setAttributes( null));
             }
             let observable$ = Rx.Observable.empty();
+
+            // Call specific services to formulate data of NRU/ADS
             if (activeTool === URBANISME_TOOLS.NRU) {
                 const cgoCommune = parcelleId.slice(0, 6);
                 const codeCommune = cgoCommune.substr(0, 2) + cgoCommune.substr(3, 6);
@@ -189,7 +212,8 @@ export default {
     toggleLandPlanningEpic,
     setUpPluginEpic,
     clickOnMapEventEpic,
-    getFeatureInfoClick,
+    getFeatureInfoEpic,
     onClosePanelEpic,
-    cleanUpUrbanisme
+    cleanUpUrbanismeEpic,
+    closeOnMeasureEnabledEpic
 };

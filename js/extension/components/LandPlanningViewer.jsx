@@ -14,16 +14,15 @@ import {ADS_DEFAULTS, URBANISME_TOOLS} from "@js/extension/constants";
  * @param {object} props Component props
  * @param {object} props.urbanisme object containing attributes of NRU/ADS data
  * @param {func} props.togglePanel triggered on closing the LandPlanning viewer panel
- * @param {func} props.toggleHighlightFeature triggered on closing the LandPlanning viewer panel
  * @param {func} props.onPrint triggered on printing the NRU/ADS attributes to PDF
  *
  */
-const LandPlanningViewer = ({urbanisme, togglePanel, toggleHighlightFeature, onPrint}) => {
+const LandPlanningViewer = ({urbanisme, togglePanel, onPrint}) => {
     const {attributes = {}, activeTool, dataLoading: loading, printing} = urbanisme;
     const printDisabled = loading || isEmpty(attributes) || printing;
     const { NRU, ADS } = URBANISME_TOOLS;
 
-    const closePanel = () => { togglePanel(false); toggleHighlightFeature(false);};
+    const closePanel = () => {togglePanel(false);};
 
     const Viewer = () => {
         if (isEmpty(attributes)) return (<p>No data to display</p>);

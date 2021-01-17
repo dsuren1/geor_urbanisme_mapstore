@@ -11,8 +11,14 @@ import { URBANISME_RASTER_LAYER_ID } from '../constants';
 
 export const configSelector = (state) => state?.urbanisme?.config;
 
-export const activeSelector = (state) => state?.urbanisme?.activeTool;
+export const activeToolSelector = (state) => state?.urbanisme?.activeTool;
+
+export const printingSelector = (state) => state?.urbanisme?.printing || false;
+
+export const lpGFIPanelSelector = (state) => state?.urbanisme?.showGFIPanel || false;
 
 export const attributesSelector = (state) => state?.urbanisme?.attributes || {};
+
+export const urbanimseControlSelector = (state) => state?.controls?.urbanisme?.enabled || false;
 
 export const urbanismeLayerSelector = (state) => getLayerFromId(state, URBANISME_RASTER_LAYER_ID);
