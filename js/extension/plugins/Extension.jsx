@@ -25,7 +25,7 @@ const Urbanisme = connect((state) => ({
     urbanisme: state?.urbanisme || {}
 }), {
     onSetUp: setUp,
-    togglePanel: toggleGFIPanel,
+    onTogglePanel: toggleGFIPanel,
     onToggleTool: toggleUrbanismeTool,
     onToggleControl: toggleControl,
     onPrint: printSubmit

@@ -26,12 +26,14 @@ describe('Extension', () => {
         document.body.innerHTML = '';
         setTimeout(done);
     });
-    it('shows Urbanisme Toolbar', () => {
+    it('shows Urbanisme plugin', () => {
         const UrbanismePlugin1 = createPlugin(UrbanismePlugin.name, UrbanismePlugin);
         const { Plugin: ActivePlugin } = getPluginForTest(UrbanismePlugin1, {controls: { urbanisme: { enabled: true }}});
         ReactDOM.render(<ActivePlugin />, document.getElementById("container"));
         expect(document.querySelector('.urbanismeToolbar')).toExist();
-
+    });
+    it('hide Urbanisme plugin', ()=> {
+        const UrbanismePlugin1 = createPlugin(UrbanismePlugin.name, UrbanismePlugin);
         const { Plugin: DeactivatedPlugin } = getPluginForTest(UrbanismePlugin1, {controls: { urbanisme: { enabled: false }}});
         ReactDOM.render(<DeactivatedPlugin />, document.getElementById("container"));
         expect(document.querySelector('.urbanismeToolbar')).toNotExist();

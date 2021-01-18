@@ -39,7 +39,7 @@ const UrbanismeToolbar = ({enabled = false, urbanisme = {}, onSetUp = () => {}, 
     if (!enabled) return null;
 
     return (<>
-        <div style={panelStyle}> <Toolbar
+        <div className="urbanismeToolbar" style={panelStyle}> <Toolbar
             btnDefaultProps={{
                 className: 'square-button',
                 bsStyle: 'primary'

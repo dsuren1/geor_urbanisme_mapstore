@@ -1,3 +1,11 @@
+/*
+ * Copyright 2021, GeoSolutions Sas.
+ * All rights reserved.
+ *
+ * This source code is licensed under the BSD-style license found in the
+ * LICENSE file in the root directory of this source tree.
+*/
+
 import React from 'react';
 import {Glyphicon} from 'react-bootstrap';
 import isEmpty from 'lodash/isEmpty';
@@ -13,16 +21,15 @@ import {ADS_DEFAULTS, URBANISME_TOOLS} from "@js/extension/constants";
  * LandPlanningViewer component
  * @param {object} props Component props
  * @param {object} props.urbanisme object containing attributes of NRU/ADS data
- * @param {func} props.togglePanel triggered on closing the LandPlanning viewer panel
+ * @param {func} props.onTogglePanel triggered on closing the LandPlanning viewer panel
  * @param {func} props.onPrint triggered on printing the NRU/ADS attributes to PDF
- *
  */
-const LandPlanningViewer = ({urbanisme, togglePanel, onPrint}) => {
-    const {attributes = {}, activeTool, dataLoading: loading, printing} = urbanisme;
+const LandPlanningViewer = ({urbanisme, onTogglePanel, onPrint}) => {
+    const {attributes = {}, activeTool = '', dataLoading: loading = false, printing = false} = urbanisme || {};
     const printDisabled = loading || isEmpty(attributes) || printing;
     const { NRU, ADS } = URBANISME_TOOLS;
 
-    const closePanel = () => {togglePanel(false);};
+    const closePanel = () => {onTogglePanel(false);};
 
     const Viewer = () => {
         if (isEmpty(attributes)) return (<p>No data to display</p>);
@@ -36,6 +43,7 @@ const LandPlanningViewer = ({urbanisme, togglePanel, onPrint}) => {
 
     const onSubmitPrint = () => {
         let paramAttributes = {};
+        // NRU print param attributes
         if (activeTool === NRU) {
             paramAttributes = {
                 parcelle: attributes.parcelle || '',
@@ -53,11 +61,11 @@ const LandPlanningViewer = ({urbanisme, togglePanel, onPrint}) => {
                 libelles: (attributes.libelles || []).join("\n\n") || [],
                 outputFilename: "NRU_" + attributes.parcelle
             };
-        } else if (activeTool === ADS) {
+        } else if (activeTool === ADS) {  // ADS print param attributes
             const {emptyNom, emptyNumNom} = ADS_DEFAULTS;
             const parcelle = attributes.id_parcelle || '';
             paramAttributes = {
-                layout: "A4 portrait ADS",
+                layout: "A4 portrait ADS", // Layout to differentiate from NRU
                 instruction: isEmpty(attributes.nom) && isEmpty(attributes.ini_instru)
                     ? emptyNom : attributes.nom + " / " + attributes.ini_instru,
                 parcelle,
@@ -75,14 +83,14 @@ const LandPlanningViewer = ({urbanisme, togglePanel, onPrint}) => {
             <button onClick={closePanel} className="close"> <Glyphicon glyph="1-close"/></button>
         </span>
         <div role="body" style={{...(!loading && {maxHeight: 400, overflow: 'auto'})}}>
-            {loading ? <Loader size={100} style={{margin: '0 auto'}}/> : <Viewer/> }
+            {loading ? <Loader size={100} style={{margin: '0 auto'}} className="data-loader"/> : <Viewer/> }
         </div>
         <span role="footer">
-            <Button disabled={printDisabled} onClick={onSubmitPrint} bsStyle="primary">
+            <Button disabled={printDisabled} onClick={onSubmitPrint} bsStyle="primary" className="print">
                 {printing ? <Spinner spinnerName="circle" noFadeIn overrideSpinnerClassName="spinner" /> : null}
                 Print
             </Button>
-            <Button disabled={loading} onClick={closePanel} bsStyle="primary">Cancel</Button>
+            <Button disabled={loading} onClick={closePanel} bsStyle="primary" className="cancel">Cancel</Button>
         </span>
     </Dialog>);
 };
