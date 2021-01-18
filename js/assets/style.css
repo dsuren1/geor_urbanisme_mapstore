@@ -21,12 +21,12 @@
     color: lightgrey;
     font-weight: bold;
 }
-.parcelle h2, .parcelle h3 {
+.parcelle_ads h2, .parcelle_nru h2, .parcelle_ads h3, .parcelle_nru h3 {
     margin-top: 0;
     font-weight: bold;
 }
 
-.parcelle .table-parcelle td {
+.parcelle_nru .table-parcelle td {
     padding: 4px;
 }
 

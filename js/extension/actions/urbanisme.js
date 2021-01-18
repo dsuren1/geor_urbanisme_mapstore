@@ -4,13 +4,13 @@
  *
  * This source code is licensed under the BSD-style license found in the
  * LICENSE file in the root directory of this source tree.
-*/
-import axios from '@mapstore/libs/ajax';
-import {printError} from "@mapstore/actions/print";
+ */
+import axios from "@mapstore/libs/ajax";
+import { printError } from "@mapstore/actions/print";
 
-import { getUrbanismePrintSpec, retryDownload } from '../utils/UrbanismeUtils';
+import { getUrbanismePrintSpec, retryDownload } from "../utils/UrbanismeUtils";
 
-export * from './setUp';
+export * from "./setUp";
 export const TOGGLE_TOOL = "URBANISME:TOGGLE_TOOL";
 export const TOGGLE_VIEWER_PANEL = "URBANISME:TOGGLE_VIEWER_PANEL";
 export const SET_URBANISME_DATA = "URBANISME:SET_URBANISME_DATA";
@@ -35,7 +35,7 @@ export const loading = (value, name) => ({
  * @param {string} tool name to active
  * @return {object} with type `TOGGLE_TOOL`
  */
-export const toggleUrbanismeTool = (tool) =>{
+export const toggleUrbanismeTool = tool => {
     return {
         type: TOGGLE_TOOL,
         activeTool: tool
@@ -61,7 +61,7 @@ export const setAttributes = (property = {}) => {
  * @param {boolean} enabled state of the viewer panel
  * @return {object} with type `TOGGLE_VIEWER_PANEL`
  */
-export const toggleGFIPanel = (enabled) => {
+export const toggleGFIPanel = enabled => {
     return {
         type: TOGGLE_VIEWER_PANEL,
         enabled
@@ -74,11 +74,18 @@ export const toggleGFIPanel = (enabled) => {
  * @param {object} attributes of the NRU/ADS data to be printed onto the PDF
  * @return dispatch actions
  */
-export const printSubmit = (attributes) => {
+export const printSubmit = attributes => {
     return (dispatch, getState) => {
         const state = getState() || {};
-        const {outputFilename, layout = 'A4 portrait', ...dataAttributes} = attributes || {};
-        const {layers, scaleForZoom, projectedCenter, dpi, projection} = getUrbanismePrintSpec(state);
+        const { outputFilename, layout = "A4 portrait", ...dataAttributes } =
+      attributes || {};
+        const {
+            layers,
+            scaleForZoom,
+            projectedCenter,
+            dpi,
+            projection
+        } = getUrbanismePrintSpec(state);
         const params = {
             layout,
             outputFilename,
@@ -93,10 +100,14 @@ export const printSubmit = (attributes) => {
                 ...dataAttributes
             }
         };
-        dispatch(loading(true, 'printing'));
-        return axios.post('/urbanisme/print/report.pdf', params)
-            .then((response) => retryDownload(response, outputFilename))
-            .then(()=> dispatch(loading(false, 'printing')))
-            .catch(e=> {dispatch(printError('Error on reading print result: ' + e.data)); dispatch(loading(false, 'printing'));});
+        dispatch(loading(true, "printing"));
+        return axios
+            .post("/urbanisme/print/report.pdf", params)
+            .then(response => retryDownload(response, outputFilename))
+            .then(() => dispatch(loading(false, "printing")))
+            .catch(e => {
+                dispatch(printError("Error on reading print result: " + e.data));
+                dispatch(loading(false, "printing"));
+            });
     };
 };

@@ -43,17 +43,6 @@ describe('NRUInfo', () => {
         const props = {commune: "Commune Text", codeSection: "code", numero: "1", adresseCadastrale: "address",
             contenanceDGFiP: "1", surfaceSIG: "1", codeProprio: "code1",
             nomProprio: "1pro", dateRU: "2020/08/02", datePCI: "06/2020"};
-        const tableData = {
-            Section: props.codeSection || '',
-            "Numéro parcelle": props.numero || '',
-            "Adresse cadastrale": props.adresseCadastrale || '',
-            "Contenance DGFiP (m²)": props.contenanceDGFiP || '',
-            "Surface calculée (m²)": props.surfaceSIG || '',
-            "Compte propriétaire": props.codeProprio || '',
-            "Propriétaire(s)": props.nomProprio || '',
-            "Date de production des RU": props.dateRU || '',
-            "Millésime du cadastre": props.datePCI || ''
-        };
         ReactDOM.render(<NRUInfo {...props}/>, document.getElementById("container"));
         const container = document.getElementById('container');
         expect(container).toBeTruthy();
@@ -64,15 +53,14 @@ describe('NRUInfo', () => {
         // Table header
         const parcelleTableHeader = container.querySelectorAll('.table-parcelle > thead > tr > td');
         expect(parcelleTableHeader).toBeTruthy();
-        expect(parcelleTableHeader[0].innerText).toBe('Commune');
+        expect(parcelleTableHeader[0].innerText).toBe('urbanisme.nru.territory');
         expect(parcelleTableHeader[1].innerText).toBe(props.commune);
 
         // Table body
-        const parcelleColLabel = container.querySelectorAll('.table-parcelle > tbody > tr > td.parcelle-table-label');
         const parcelleColValue = container.querySelectorAll('.table-parcelle > tbody > tr > td.parcelle-table-value');
-        Object.keys(tableData).forEach((key, i)=>{
-            expect(parcelleColLabel[i].innerText).toEqual(key);
-            expect(parcelleColValue[i].innerText).toEqual(tableData[key]);
+        const values = Object.values(props);
+        Object.keys(parcelleColValue).forEach((_, i)=>{
+            expect(parcelleColValue[i].innerText).toEqual(values[i + 1]);
         });
     });
 

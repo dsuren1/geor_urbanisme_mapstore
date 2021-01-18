@@ -15,14 +15,14 @@ import { PURGE_MAPINFO_RESULTS, TOGGLE_HIGHLIGHT_FEATURE,
 import { ADD_LAYER, REMOVE_LAYER } from '@mapstore/actions/layers';
 
 import { setUpPluginEpic, toggleLandPlanningEpic,
-    cleanUpUrbanismeEpic, clickOnMapEventEpic, closeOnMeasureEnabledEpic, getFeatureInfoEpic, onClosePanelEpic } from '../urbanisme';
+    cleanUpUrbanismeEpic, clickOnMapEventEpic, closeOnMeasureEnabledEpic, getFeatureInfoEpic, onClosePanelEpic, onToogleToolEpic } from '../urbanisme';
 import {
     setUp,
     LOADING,
     SET_CONFIG,
     TOGGLE_TOOL,
     TOGGLE_VIEWER_PANEL,
-    SET_URBANISME_DATA, toggleGFIPanel
+    SET_URBANISME_DATA, toggleGFIPanel, toggleUrbanismeTool
 } from '../../actions/urbanisme';
 import { URBANISME_RASTER_LAYER_ID } from '../../constants';
 import axios from 'axios';
@@ -266,7 +266,6 @@ describe('Urbanisme EPICS', () => {
             3,
             loadFeatureInfo(1, "Response", {service: "WMS", id: URBANISME_RASTER_LAYER_ID}, layerMetaData, urbanismeLayer),
             actions => {
-                console.log("actions", JSON.stringify(actions));
                 expect(actions.length).toBe(3);
                 actions.map(action=>{
                     switch (action.type) {
@@ -326,6 +325,34 @@ describe('Urbanisme EPICS', () => {
                 done();
             },
             state);
+    });
+
+    it('onToogleToolEpic clean up activities of previous tool', (done) => {
+        testEpic(
+            onToogleToolEpic,
+            4,
+            toggleUrbanismeTool('NRU'),
+            actions => {
+                expect(actions.length).toBe(4);
+                actions.map(action=>{
+                    switch (action.type) {
+                    case HIDE_MAPINFO_MARKER:
+                        break;
+                    case TOGGLE_HIGHLIGHT_FEATURE:
+                        expect(action.enabled).toBe(false);
+                        break;
+                    case SET_URBANISME_DATA:
+                        expect(action.property).toEqual(null);
+                        break;
+                    case TOGGLE_VIEWER_PANEL:
+                        expect(action.enabled).toBe(false);
+                        break;
+                    default:
+                        expect(true).toBe(false);
+                    }
+                });
+                done();
+            }, {});
     });
 
 });

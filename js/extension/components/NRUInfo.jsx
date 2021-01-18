@@ -4,53 +4,87 @@
  *
  * This source code is licensed under the BSD-style license found in the
  * LICENSE file in the root directory of this source tree.
-*/
+ */
 
-import React from 'react';
-import {Table} from 'react-bootstrap';
+import React from "react";
+import { Table } from "react-bootstrap";
+import Message from "@mapstore/components/I18N/Message";
 
 /**
  * NRUInfo component
  * @param {object} props Component props
  * @param {object} props object containing attributes of NRU data
  */
-const NRUInfo = ({
-    parcelle = '', commune = '', libelles = [], ...props}) => {
-
-    const tableData = {
-        Section: props.codeSection || '',
-        "Numéro parcelle": props.numero || '',
-        "Adresse cadastrale": props.adresseCadastrale || '',
-        "Contenance DGFiP (m²)": props.contenanceDGFiP || '',
-        "Surface calculée (m²)": props.surfaceSIG || '',
-        "Compte propriétaire": props.codeProprio || '',
-        "Propriétaire(s)": props.nomProprio || '',
-        "Date de production des RU": props.dateRU || '',
-        "Millésime du cadastre": props.datePCI || ''
-    };
+const NRUInfo = (props) => {
+    const tableData = [
+        {
+            label: <Message msgId={"urbanisme.nru.section"}/>,
+            value: props.codeSection || ''
+        },
+        {
+            label: <Message msgId={"urbanisme.nru.plotNumber"}/>,
+            value: props.numero || ''
+        },
+        {
+            label: <Message msgId={"urbanisme.nru.address"}/>,
+            value: props.adresseCadastrale || ''
+        },
+        {
+            label: <Message msgId={"urbanisme.nru.capacity"}/>,
+            value: props.contenanceDGFiP || ''
+        },
+        {
+            label: <Message msgId={"urbanisme.nru.area"}/>,
+            value: props.surfaceSIG || ''
+        },
+        {
+            label: <Message msgId={"urbanisme.nru.account"}/>,
+            value: props.codeProprio || ''
+        },
+        {
+            label: <Message msgId={"urbanisme.nru.owner"}/>,
+            value: props.nomProprio || ''
+        },
+        {
+            label: <Message msgId={"urbanisme.nru.productionDate"}/>,
+            value: props.dateRU || ''
+        },
+        {
+            label: <Message msgId={"urbanisme.nru.year"}/>,
+            value: props.datePCI || ''
+        }
+    ];
 
     return (
         <div className="parcelle_nru">
-            <h2>Réglementation applicable à la parcelle cadastrale</h2>
-            <h3>{parcelle}</h3>
+            <h2>
+                <Message msgId={"urbanisme.nru.title"} />
+            </h2>
+            <h3 style={{ fontWeight: 500 }}>{props.parcelle}</h3>
             <Table className="table-parcelle">
                 <thead>
                     <tr>
-                        <td className="parcelle-table-label">Commune</td>
-                        <td className="parcelle-table-value">{commune}</td>
+                        <td className="parcelle-table-label">
+                            <Message msgId={"urbanisme.nru.territory"} />{" "}
+                        </td>
+                        <td className="parcelle-table-value">{props.commune || ''}</td>
                     </tr>
                 </thead>
                 <tbody>
-                    {Object.keys(tableData).map(key=> {
-                        return (<tr>
-                            <td className="parcelle-table-label">{key}</td>
-                            <td className="parcelle-table-value">{tableData[key]}</td>
-                        </tr>);
-                    })}
+                    {
+                        tableData.map(({label, value}, i)=>{
+                            return (<tr key={i}>
+                                <td className="parcelle-table-label">{label}</td>
+                                <td className="parcelle-table-value">{value}</td>
+                            </tr>);
+                        })
+                    }
                 </tbody>
             </Table>
             <div>
-                {libelles.map(libelle=> <p className="libelle">{libelle}</p>)}
+                {(props.libelles || []).map(libelle => (
+                    <p className="libelle">{libelle}</p>
+                ))}
             </div>
         </div>
     );

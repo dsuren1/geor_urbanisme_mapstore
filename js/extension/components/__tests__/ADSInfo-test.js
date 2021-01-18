@@ -9,7 +9,6 @@ import React from 'react';
 import expect from 'expect';
 import ReactDOM from "react-dom";
 import ADSInfo from '../ADSInfo';
-import {ADS_DEFAULTS} from "@js/extension/constants";
 
 describe('ADSInfo', () => {
     beforeEach((done) => {
@@ -30,16 +29,16 @@ describe('ADSInfo', () => {
     });
 
     it('test render ADSInfo with empty secteur and empty quartier', () => {
-        const {emptyNom, emptyNumNom} = ADS_DEFAULTS;
         const props = {id_parcelle: "parcelle_1"};
         ReactDOM.render(<ADSInfo {...props}/>, document.getElementById("container"));
         const container = document.getElementById('container');
         expect(container).toBeTruthy();
 
-        const secteur = container.querySelector('span');
-        const quartier = container.querySelector('p');
-        expect(secteur.innerText).toEqual(emptyNom);
-        expect(quartier.innerText).toEqual(emptyNumNom);
+        const span = container.querySelectorAll('span');
+        const secteur = span[2];
+        const quartier = span[5];
+        expect(secteur.innerText).toEqual('urbanisme.ads.emptyNom');
+        expect(quartier.innerText).toEqual('urbanisme.ads.emptyNumNom');
     });
 
     it('test render ADSInfo with valid secteur and valid quartier', () => {
@@ -48,8 +47,9 @@ describe('ADSInfo', () => {
         const container = document.getElementById('container');
         expect(container).toBeTruthy();
 
-        const secteur = container.querySelector('span');
-        const quartier = container.querySelector('p');
+        const span = container.querySelectorAll('span');
+        const secteur = span[2];
+        const quartier = span[5];
         expect(secteur.innerText).toEqual(props.nom + ' / ' + props.ini_instru);
         expect(quartier.innerText).toEqual(props.num_nom);
     });
@@ -76,7 +76,7 @@ describe('ADSInfo', () => {
         const parcelleTitle = container.querySelector('h2');
         const parcelleValue = container.querySelectorAll('h3')[0];
         expect(parcelleTitle).toBeTruthy();
-        expect(parcelleTitle.innerText).toEqual(ADS_DEFAULTS.parcelle);
+        expect(parcelleTitle.innerText).toEqual('urbanisme.ads.parcelle');
         expect(parcelleValue.innerText).toEqual(props.id_parcelle);
     });
 });
