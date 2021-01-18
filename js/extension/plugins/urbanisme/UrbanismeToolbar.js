@@ -10,7 +10,6 @@ import React, { useEffect } from "react";
 import Toolbar from "@mapstore/components/misc/toolbar/Toolbar";
 import {
     CONTROL_NAME,
-    URBANISME_HELP,
     URBANISME_TOOLS
 } from "@js/extension/constants";
 import LandPlanning from "@js/extension/components/LandPlanningViewer";
@@ -23,6 +22,7 @@ import LandPlanning from "@js/extension/components/LandPlanningViewer";
  * @param {func} props.onSetUp triggered when the component is initialized
  * @param {func} props.onToggleTool triggered on clicking the toolbar buttons
  * @param {func} props.onToggleControl triggered on clicking the close button of the toolbar
+ * @param {string} props.helpLink configured help link from the localConfig
  *
  */
 const UrbanismeToolbar = ({
@@ -31,6 +31,7 @@ const UrbanismeToolbar = ({
     onSetUp = () => {},
     onToggleTool = () => {},
     onToggleControl = () => {},
+    helpLink = '',
     ...props
 }) => {
     const { activeTool = '', showGFIPanel = false } = urbanisme;
@@ -78,7 +79,7 @@ const UrbanismeToolbar = ({
                             bsStyle: "primary",
                             onClick: () =>
                                 window.open(
-                                    URBANISME_HELP,
+                                    helpLink,
                                     HELP,
                                     "menubar=no,status=no,scrollbars=yes"
                                 )

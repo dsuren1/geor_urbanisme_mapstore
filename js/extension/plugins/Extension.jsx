@@ -45,6 +45,20 @@ const Urbanisme = connect(
  *
  * @name Urbanisme
  * @memberof plugins
+ * @prop {string} [enabled] flag to show/hide the plugin toolbar
+ * @prop {object} [urbanisme] object containing all the properties specific for the plugin
+ * @prop {function} [onSetUp] function used to set up initial configurations
+ * @prop {function} [onTogglePanel] function used to toggle the display state of the viewer panel
+ * @prop {function} [onToggleTool] function used to toggle tool to activate
+ * @prop {function} [onToggleControl] function used to toggle state of the plugin toolbar
+ * @prop {function} [onPrint] function used to print the attributes of NRU/ADS onto PDF
+ * @prop {object} [cfg.helpLink] help link configured for the help tool
+ * For example this will configure the following help link and upon clicking on the help button in the toolbar, the link will be displayed in new browser window
+ * ```
+ * "cfg": {
+ *  "helpLink": 'http://docs.georchestra.org/addon_urbanisme/'
+ *  }
+ * ```
  */
 const UrbanismePlugin = {
     name: "Urbanisme",

@@ -280,7 +280,13 @@
             },
             "FeedbackMask"
         ],
-        "desktop": ["Details", "Urbanisme",
+        "desktop": ["Details",
+          {
+            "name": "Urbanisme",
+            "cfg": {
+              "helpLink": "http://docs.georchestra.org/addon_urbanisme/"
+            }
+          },
           {
             "name": "Map",
             "cfg": {
